@@ -7,7 +7,7 @@ from tkinter.ttk import Button
 from functools import partial
 
 #local
-from open_doc_write import write_a_long_text  # Import from open_doc_write.py
+from utils.open_doc_write import write_a_long_text  # Import from open_doc_write.py
 
 
 

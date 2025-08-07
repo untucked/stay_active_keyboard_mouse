@@ -1,3 +1,4 @@
+# utils/activity_utils_essay.py
 import time
 import pyautogui
 from pynput import mouse, keyboard
@@ -40,7 +41,11 @@ def on_keyboard_activity(key):
     last_keyboard_activity = time.time()
 
 def start_listening():
-    mouse_listener = mouse.Listener(on_move=on_mouse_activity)
+    mouse_listener = mouse.Listener(
+        on_move=on_mouse_activity,
+        on_click=lambda *a, **k: on_mouse_activity(None, None),
+        on_scroll=lambda *a, **k: on_mouse_activity(None, None)
+    )
     mouse_listener.start()
 
     keyboard_listener = keyboard.Listener(on_press=on_keyboard_activity)
@@ -69,14 +74,13 @@ def check_inactivity(root, inactivity_threshold, file_path):
     if (current_time - last_mouse_activity) >= (inactivity_threshold * 60) and \
        (current_time - last_keyboard_activity) >= (inactivity_threshold * 60):
         inactivity_counter += 1
-        # Trigger write_a_long_text after 10 inactivity events
         if inactivity_counter >= 10:
             print("Triggering `write_a_long_text`...")
             write_a_long_text(file_path)
-            inactivity_counter = 0  # Reset the counter
+            inactivity_counter = 0
         else:
             do_stuff_to_stay_awake()
-    root.after(29 * 1000, check_inactivity, root, inactivity_threshold)
+    root.after(29 * 1000, check_inactivity, root, inactivity_threshold, file_path)
 
 def start_activity_prevention(root, inactivity_entry, currently_running_label, currently_running_label2, start_button, stop_button, file_path):
     global inactivity_threshold

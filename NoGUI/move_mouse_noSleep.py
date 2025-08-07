@@ -1,47 +1,66 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Feb  3 12:03:15 2021
-
-An updated script to prevent the computer from going to sleep by moving the mouse and simulating keystrokes.
-"""
-
+# NoGUI/move_mouse_noSleep.py
 import pyautogui as pag
-from time import sleep
+import time
+import argparse
+import random
+import sys
 
-print(pag.size())  # Print screen size
-print('Moving mouse slightly every 1 minute')
-wait_time = 60  # 1 minute
-i = 0
+def parse_args():
+    p = argparse.ArgumentParser(description="Lightweight keep-alive mouse jiggle.")
+    p.add_argument("--interval", type=int, default=60, help="Seconds between actions (default: 60)")
+    p.add_argument("--pixels", type=int, default=2, help="Jiggle distance in pixels (default: 2)")
+    p.add_argument("--alt_tab", action="store_true", help="Also press Alt+Tab each interval (off by default)")
+    p.add_argument("--idle_grace", type=int, default=10, help="Skip jiggle if mouse moved in last N seconds (default: 10)")
+    return p.parse_args()
 
-def move_mouse(i):
-    """
-    Moves the mouse slightly to prevent inactivity.
-    """
+def jiggle(pixels: int):
     try:
-        pos = pag.position()
-        x, y = pos.x, pos.y
-        if i % 2:
-            x += 2
-            y += 2
-        else:
-            x -= 2
-            y -= 2
+        x, y = pag.position()
+        dx = pixels if random.choice((True, False)) else -pixels
+        dy = pixels if random.choice((True, False)) else -pixels
+        pag.moveRel(dx, dy, duration=0)   # out
+        pag.moveRel(-dx, -dy, duration=0) # back
+    except pag.FailSafeException:
+        print("[move_mouse] PyAutoGUI fail-safe triggered (top-left).", file=sys.stderr)
 
-        pag.moveTo(x, y, duration=1)
-    except pag.FailSafeException as e:
-        print(f"Mouse movement error: {e}")
-
-def press_alt_tab():
-    """
-    Simulates pressing Alt+Tab to switch windows.
-    """
+def maybe_alt_tab():
     try:
         pag.hotkey("alt", "tab")
-    except pag.FailSafeException as e:
-        print(f"Keyboard action error: {e}")
+    except pag.FailSafeException:
+        print("[alt_tab] PyAutoGUI fail-safe triggered.", file=sys.stderr)
 
-while True:
-    move_mouse(i)
-    press_alt_tab()
-    sleep(wait_time)
-    i += 1
+def main():
+    args = parse_args()
+    pag.FAILSAFE = True  # keep the safety
+
+    print(f"Screen size: {pag.size()}")
+    print(f"Moving mouse ~every {args.interval}s (pixels={args.pixels}, alt_tab={args.alt_tab})")
+
+    last_pos = pag.position()
+    last_pos_time = time.time()
+
+    try:
+        while True:
+            now = time.time()
+            curr_pos = pag.position()
+            if curr_pos != last_pos:
+                last_pos = curr_pos
+                last_pos_time = now
+
+            # Only act if no user move in the last idle_grace seconds
+            if (now - last_pos_time) >= args.idle_grace:
+                jiggle(args.pixels)
+                if args.alt_tab:
+                    maybe_alt_tab()
+            else:
+                # User is active; skip this cycle
+                pass
+
+            # Add a tiny random jitter to the timing to look less robotic
+            sleep_s = args.interval + random.uniform(-1.0, 1.0)
+            time.sleep(max(1.0, sleep_s))
+    except KeyboardInterrupt:
+        print("\nExiting. Bye!")
+
+if __name__ == "__main__":
+    main()

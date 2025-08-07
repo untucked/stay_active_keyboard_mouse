@@ -3,7 +3,7 @@ import time
 from pynput import mouse, keyboard
 
 # Set the inactivity duration threshold (in seconds)
-inactivity_threshold = 60 * 2  # 1 minutes
+inactivity_threshold = 60 * 2  # 2 minutes
 
 # Variables to track the last activity times
 last_mouse_activity = time.time()
@@ -11,12 +11,17 @@ last_keyboard_activity = time.time()
 
 # Move the mouse cursor a little bit
 def move_mouse():
-    # You can adjust the values to control the mouse movement distance
-    pyautogui.move(10, 10, duration=0.25)
-    pyautogui.move(-10, -10, duration=0.25)
+    """
+    Moves the mouse diagonally and back to prevent screen inactivity.
+    """
+    try:
+        pyautogui.move(10, 10, duration=0.25)
+        pyautogui.move(-10, -10, duration=0.25)
+    except pyautogui.FailSafeException as e:
+        print(f"Mouse movement failed: {e}")
 
 # Callback function for mouse activity
-def on_mouse_activity(x, y): # , button, pressed):
+def on_mouse_activity(x, y):
     global last_mouse_activity
     last_mouse_activity = time.time()
 
@@ -27,7 +32,13 @@ def on_keyboard_activity(key):
 
 # Type something on the keyboard
 def press_alt_tab():
-    pyautogui.hotkey('alt', 'tab')  
+    """
+    Simulates pressing Alt+Tab to switch windows.
+    """
+    try:
+        pyautogui.hotkey('alt', 'tab')  
+    except pyautogui.FailSafeException as e:
+        print(f"Keyboard action failed: {e}")
 
 # Set up mouse listener
 mouse_listener = mouse.Listener(on_move=on_mouse_activity)
@@ -46,8 +57,6 @@ while True:
         move_mouse()
         press_alt_tab()
         last_mouse_activity = current_time
-    else:
-        continue
     # Check for keyboard inactivity
     if (current_time - last_keyboard_activity) >= inactivity_threshold:
         print('keyboard inactive')
@@ -55,4 +64,5 @@ while True:
         press_alt_tab()
         last_keyboard_activity = current_time
 
-    time.sleep(59)  # Check every 30 seconds
+        time.sleep(59)  # Check every 59 seconds
+

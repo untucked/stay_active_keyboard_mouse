@@ -1,3 +1,4 @@
+# utils/activity_utils.py
 import time
 import pyautogui
 from pynput import mouse, keyboard

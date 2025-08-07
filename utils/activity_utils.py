@@ -6,10 +6,8 @@ import pytz
 from tkinter.ttk import Button
 from functools import partial
 
-#local
+# Local import
 from utils.open_doc_write import write_a_long_text  # Import from open_doc_write.py
-
-
 
 pyautogui.FAILSAFE = False
 
@@ -30,19 +28,26 @@ def move_mouse():
     pyautogui.move(10, 10, duration=1.0)
     pyautogui.move(-10, -10, duration=1.0)
 
-def on_mouse_activity(x, y):
+# Callback function for mouse movement
+def on_move_activity(x, y):
     global last_mouse_activity
     last_mouse_activity = time.time()
 
+# Callback function for mouse click
+def on_click_activity(x, y, button, pressed):
+    global last_mouse_activity
+    last_mouse_activity = time.time()
+
+# Callback function for keyboard activity
 def on_keyboard_activity(key):
     global last_keyboard_activity
     last_keyboard_activity = time.time()
 
 def start_listening():
-    mouse_listener = mouse.Listener(on_move=on_mouse_activity)
+    mouse_listener = mouse.Listener(on_move=on_move_activity, on_click=on_click_activity)
     mouse_listener.start()
 
-    keyboard_listener = keyboard.Listener(on_press=on_keyboard_activity)
+    keyboard_listener = keyboard.Listener(on_press=on_keyboard_activity, on_release=on_keyboard_activity)
     keyboard_listener.start()
     return mouse_listener, keyboard_listener
 
@@ -63,15 +68,16 @@ def press_alt_tab():
 
 # Activity Prevention Logic
 def check_inactivity(root, inactivity_threshold):
-    global last_mouse_activity, last_keyboard_activity
+    global last_mouse_activity, last_keyboard_activity, is_active_override
     current_time = time.time()
-    if (current_time - last_mouse_activity) >= (inactivity_threshold * 60) and \
-       (current_time - last_keyboard_activity) >= (inactivity_threshold * 60):
-        do_stuff_to_stay_awake()
+    if not is_active_override:
+        if (current_time - last_mouse_activity) >= (inactivity_threshold * 60) and \
+           (current_time - last_keyboard_activity) >= (inactivity_threshold * 60):
+            do_stuff_to_stay_awake()
     root.after(29 * 1000, check_inactivity, root, inactivity_threshold)
-
+  
 def start_activity_prevention(root, inactivity_entry, currently_running_label, currently_running_label2, start_button, stop_button):
-    global inactivity_threshold
+    global inactivity_threshold, is_active_override
     try:
         inactivity_threshold = int(inactivity_entry.get())
     except ValueError:

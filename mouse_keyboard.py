@@ -102,4 +102,3 @@ activity_utils.check_inactivity = check_inactivity_modified
 
 # Main loop
 root.mainloop()
-
